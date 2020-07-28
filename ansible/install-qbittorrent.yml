@@ -8,13 +8,9 @@
     qbt_PreAllocation: "true"
     qbt_speed_limit_down: 1500
     qbt_speed_limit_up: "1000"
-    qbt_speed_limit_up_enabled: "true"
     qbt_AuthSubnetWhitelist: "192.168.10.0/24"
     qbt_AuthSubnetWhitelistEnabled: "true"
     qbt_user: "ubuntu"
-    user_group: "ubuntu"
-    rpc_hostname: "raspberrypi"
-    blocklist_url: "http://list.iblocklist.com/?list=ydxerpxkpcfqjaybcssw&fileformat=p2p&archiveformat=gz"
   tasks:
   - name: Add qBittorrent repo
   # probably need to find out if ubuntu or debian or something else
@@ -27,9 +23,6 @@
     apt:
       name: qbittorrent-nox
       state: latest
-  # - pause: # Pause and ask user to run qBittorrent-nox in terminal
-  #     prompt: "Please ssh to the target and run 'qbittorrent-nox', then Ctrl-C to break"
-  # ^ not needed because we can accept the EULA in qBittorrent.conf below
   - name: Update config file
     # https://stackoverflow.com/questions/39974653/how-to-replace-block-text-with-help-blockinfile
     lineinfile: dest=$HOME/.config/qBittorrent/qBittorrent.conf regexp="{{ item.regexp }}" line="{{ item.line }}"
