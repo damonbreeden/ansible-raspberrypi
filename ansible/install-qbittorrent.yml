@@ -1,0 +1,81 @@
+---
+- hosts: all
+  become: true
+  vars:
+    qbt_complete_dir: "/mnt/drive1/shared/downloads/complete/"
+    qbt_incomplete_dir: "/mnt/drive1/shared/downloads/incomplete/"
+    qbt_max_peers_global: "100"
+    qbt_PreAllocation: "true"
+    qbt_speed_limit_down: 1500
+    qbt_speed_limit_up: "1000"
+    qbt_speed_limit_up_enabled: "true"
+    qbt_AuthSubnetWhitelist: "192.168.10.0/24"
+    qbt_AuthSubnetWhitelistEnabled: "true"
+    qbt_user: "ubuntu"
+    user_group: "ubuntu"
+    rpc_hostname: "raspberrypi"
+    blocklist_url: "http://list.iblocklist.com/?list=ydxerpxkpcfqjaybcssw&fileformat=p2p&archiveformat=gz"
+  tasks:
+  - name: Add qBittorrent repo
+  # probably need to find out if ubuntu or debian or something else
+    apt_repository:
+      repo: ppa:qbittorrent-team/qbittorrent-stable
+  - name: Update the package index
+    apt:
+      update_cache: yes
+  - name: Install qbittorrent-nox
+    apt:
+      name: qbittorrent-nox
+      state: latest
+  # - pause: # Pause and ask user to run qBittorrent-nox in terminal
+  #     prompt: "Please ssh to the target and run 'qbittorrent-nox', then Ctrl-C to break"
+  # ^ not needed because we can accept the EULA in qBittorrent.conf below
+  - name: Update config file
+    # https://stackoverflow.com/questions/39974653/how-to-replace-block-text-with-help-blockinfile
+    lineinfile: dest=$HOME/.config/qBittorrent/qBittorrent.conf regexp="{{ item.regexp }}" line="{{ item.line }}"
+    with_items:
+      - { regexp: 'Bittorrent\MaxConnecs=',             line: 'Bittorrent\MaxConnecs={{ qbt_max_peers_global }}'}
+      - { regexp: 'Connection\GlobalDLLimit=',          line: 'Connection\GlobalDLLimit={{qbt_speed_limit_down}}'}
+      - { regexp: 'Connection\GlobalUPLimit=',          line: 'Connection\GlobalUPLimit={{qbt_speed_limit_up}}'}
+      - { regexp: 'Downloads\PreAllocation=',           line: 'Downloads\PreAllocation={{qbt_PreAllocation}}'}
+      - { regexp: 'Downloads\SavePath=',                line: 'Downloads\SavePath={{qbt_complete_dir}}'}
+      - { regexp: 'Downloads\TempPath=',                line: 'Downloads\TempPath={{ qbt_incomplete_dir }}'}
+      - { regexp: 'WebUI\AuthSubnetWhitelist=',         line: 'WebUI\AuthSubnetWhitelist={{ qbt_AuthSubnetWhitelist }}'}
+      - { regexp: 'WebUI\AuthSubnetWhitelistEnabled=',  line: 'WebUI\AuthSubnetWhitelistEnabled={{ qbt_AuthSubnetWhitelistEnabled }}'}
+      - { regexp: 'Accepted=',                          line: 'Accepted=true'}
+
+  - name: Create qbittorrent service file
+    blockinfile:
+      path: /etc/systemd/system/qbittorrent.service
+      create: yes
+      block: |
+        [Unit]
+        Description=qBittorrent-nox service
+        Documentation=man:qbittorrent-nox(1)
+        Wants=network-online.target
+        After=network-online.target nss-lookup.target local-fs.target
+        BindsTo=mnt-drive1.mount
+
+        [Service]
+        # if you have systemd < 240 (Ubuntu 18.10 and earlier, for example), you probably want to use Type=simple instead
+        Type=exec
+        # change user as needed
+        User={{ qbt_user }}
+        # notice that no -d flag needed
+        ExecStart=/usr/bin/qbittorrent-nox
+        # uncomment this for versions of qBittorrent < 4.2.0 to set the maximum number of open files to unlimited
+        #LimitNOFILE=infinity
+
+        [Install]
+        WantedBy=multi-user.target
+  - name: Run systemctl daemon-reload
+    systemd:
+      daemon_reload: yes
+  - name: Enable qbittorrent service
+    systemd:
+      name: qbittorrent
+      enabled: yes
+  - name: (Re)Start qbittorrent service
+    service:
+      name: qbittorrent
+      state: restarted

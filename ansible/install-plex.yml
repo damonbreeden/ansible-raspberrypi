@@ -1,0 +1,47 @@
+---
+- hosts: all
+  become: true
+  vars:
+    plexdata_mnt_point: "/var/lib/plexmediaserver"
+    plexdata_uuid: "UUID=4d3650f1-1f6b-40b6-aff3-9d07ac032549"
+    plexdata_opts: "defaults"
+    plexdata_fstype: "ext4"
+  tasks:
+  - name: Create "{{ plexdata_mnt_point }}"
+    file:
+      path: "{{ plexdata_mnt_point }}"
+      state: directory
+  - name: Mount "{{ plexdata_mnt_point }}"
+    mount:
+      path: "{{ plexdata_mnt_point }}"
+      src: "{{ plexdata_uuid}}"
+      fstype: "{{ plexdata_fstype }}"
+      opts: "{{ plexdata_opts }}"
+      state: present
+  - name: Run 'mount -a'
+    command: mount -a
+  # https://pimylifeup.com/raspberry-pi-plex-server/
+  - name: Install apt-transport-https
+    apt:
+      name: apt-transport-https
+      state: latest
+  - name: Install Plex repo key
+    apt_key:
+      url: https://downloads.plex.tv/plex-keys/PlexSign.key
+      state: present
+  - name: Add Plex repo
+    apt_repository:
+      repo: deb https://downloads.plex.tv/repo/deb public main
+      state: present
+  - name: Update the package index
+    apt:
+      update_cache: yes
+  - name: Install Plex Media Server
+    apt:
+      name: plexmediaserver
+      state: latest
+  - name: Reload Plex service
+    service:
+      name: plexmediaserver
+      enabled: true
+      state: started

@@ -1,0 +1,10 @@
+---
+- hosts: all
+  become: true
+  tasks:
+  - name: Download docker install script
+    get_url:
+      url: https://get.docker.com
+      dest: /tmp/docker.sh
+  - name: Run docker install script
+    shell: /tmp/docker.sh >> /tmp/docker.log

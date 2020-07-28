@@ -1,0 +1,29 @@
+---
+version: "2"
+services:
+  glances:
+    image: nicolargo/glances
+    container_name: glances
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Americas/Guayaquil
+      - UMASK_SET=022
+      - WEBUI_PORT=7373
+      - GLANCES_OPT="-w"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+      - "/etc/timezone:/etc/timezone:ro"
+    network_mode: "host"
+    ports:
+      - 61208:61208
+      - 61209:61209
+    restart: unless-stopped
+  plex:
+    image: linuxserver/plex
+    container_name: plex
+    volumes:
+      - "/media/usb0/docker/plex/config:/config:rw"
+      - "/media/usb0/docker/plex/logs:/opt/plex/Library/Application Support/Plex Media Server/Logs:rw"
+      - "/media/usb0/Media:/media"
+    network_mode: "host"

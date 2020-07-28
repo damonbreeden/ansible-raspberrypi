@@ -1,0 +1,36 @@
+---
+- hosts: all
+  become: true
+  vars:
+    ###
+    ### CloudCmd
+    ###
+    docker_home: "/mnt/drive2/docker"
+    cloudcmd_available_externally: "false"
+    cloudcmd_data_directory: "{{ docker_home }}/cloudcmd/config"
+    cloudcmd_browse_directory: "/"
+    cloudcmd_user_id: "0"
+    cloudcmd_group_id: "0"
+    cloudcmd_port: "7373"
+  tasks:
+  - name: Create CloudCmd Directories
+    file:
+      path: "{{ item }}"
+      state: directory
+    with_items:
+      - "{{ cloudcmd_data_directory }}"
+  # - name: CloudCmd
+  #   docker_container:
+  #     name: cloudcmd
+  #     image: coderaiser/cloudcmd
+  #     pull: true
+  #     volumes:
+  #       - "{{ cloudcmd_data_directory }}:/config:rw"
+  #       - "{{ cloudcmd_browse_directory }}:/mnt/fs"
+  #     ports:
+  #       - "{{ cloudcmd_port }}:8000"
+  #     env:
+  #       PUID: "{{ cloudcmd_user_id }}"
+  #       PGID: "{{ cloudcmd_group_id }}"
+  #     restart_policy: unless-stopped
+  #     memory: 1g

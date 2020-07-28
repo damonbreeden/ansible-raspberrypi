@@ -1,0 +1,32 @@
+---
+- hosts: all
+  become: true
+  vars:
+    ###
+    ### Portainer
+    ###
+    docker_home: /mnt/drive2/docker
+    portainer_available_externally: "false"
+    portainer_data_directory: "{{ docker_home }}/portainer/config"
+    portainer_port: "9000"
+  tasks:
+  - name: Create Portainer Directories
+    file:
+      path: "{{ item }}"
+      state: directory
+    with_items:
+      - "{{ portainer_data_directory }}"
+
+  - name: Portainer Docker Container
+    docker_container:
+      name: portainer
+      image: portainer/portainer
+      pull: true
+      volumes:
+        - "{{ portainer_data_directory }}:/data:rw"
+        - "/var/run/docker.sock:/var/run/docker.sock:ro"
+        - "/etc/timezone:/etc/timezone:ro"
+      ports:
+        - "{{ portainer_port }}:9000"
+      restart_policy: unless-stopped
+      memory: 1g

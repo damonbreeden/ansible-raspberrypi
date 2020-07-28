@@ -1,0 +1,102 @@
+---
+- hosts: all
+  vars:
+    username: ubuntu
+  tasks:
+  - name: Copy sshd_config
+    become: true
+    copy:
+      src: '/etc/ssh/sshd_config'
+      dest: '/etc/ssh/sshd_config.bak'
+  - name: Add note to sshd_config file
+    become: true
+    lineinfile:
+      path: '/etc/ssh/sshd_config'
+      state: present
+      line: '# Configuring sshd via Ansible below'
+  - name: Add 'PermitRootLogin no'
+    become: true
+    lineinfile:
+      path: '/etc/ssh/sshd_config'
+      state: present
+      line: 'PermitRootLogin no'
+  - name: Remove 'PermitRootLogin prohibit-password'
+    become: true
+    lineinfile:
+      path: '/etc/ssh/sshd_config'
+      state: absent
+      line: 'PermitRootLogin prohibit-password'
+  - name: Remove 'PermitRootLogin yes'
+    become: true
+    lineinfile:
+      path: '/etc/ssh/sshd_config'
+      state: absent
+      line: 'PermitRootLogin yes'
+  - name: Add 'Protocol 2'
+    become: true
+    lineinfile:
+      path: '/etc/ssh/sshd_config'
+      state: present
+      line: 'Protocol 2'
+  - name: Remove 'Protocol 1'
+    become: true
+    lineinfile:
+      path: '/etc/ssh/sshd_config'
+      state: absent
+      line: 'Protocol 1'
+  - name: Disconnect idle sessions
+    become: true
+    blockinfile:
+      path: '/etc/ssh/sshd_config'
+      block: |
+        ClientAliveInterval 300
+        ClientAliveCountMax 2
+  - name: Whitelist users
+    become: true
+    lineinfile:
+      path: '/etc/ssh/sshd_config'
+      state: present
+      line: "AllowUsers {{ username }}"
+  - name: Add 'PasswordAuthentication no'
+    become: true
+    lineinfile:
+      path: '/etc/ssh/sshd_config'
+      state: present
+      line: 'PasswordAuthentication no'
+  - name: Remove 'PasswordAuthentication yes'
+    become: true
+    lineinfile:
+      path: '/etc/ssh/sshd_config'
+      state: absent
+      line: 'PasswordAuthentication yes'
+  - name: Add 'X11Forwarding no'
+    become: true
+    lineinfile:
+      path: '/etc/ssh/sshd_config'
+      state: present
+      line: 'X11Forwarding no'
+  - name: Remove 'X11Forwarding yes'
+    become: true
+    lineinfile:
+      path: '/etc/ssh/sshd_config'
+      state: absent
+      line: 'X11Forwarding yes'
+  # we're finished with SSHD config changes, so reload SSHD
+  - name: Reload sshd
+    become: true
+    service:
+      name: sshd
+      state: reloaded
+  - name: Install fail2ban
+    become: true
+    apt:
+      name: fail2ban
+      state: latest
+# /etc/fail2ban/jail.d/defaults-debian.conf enables SSH by default so all we need to do is copy /etc/fail2ban/jail.conf to /etc/fail2ban/jail.local
+  - name: Copy /etc/fail2ban/jail.conf to /etc/fail2ban/jail.local
+    become: true
+    copy:
+      remote_src: 'yes'
+      src: /etc/fail2ban/jail.conf
+      dest: /etc/fail2ban/jail.conf
+      backup: 'yes'

@@ -1,0 +1,45 @@
+---
+# https://mudge.name/2019/11/12/using-a-raspberry-pi-for-time-machine/#readying-our-storage
+- hosts: all
+  become: 'yes'
+  vars:
+    packages:
+      - samba
+      - avahi-daemon
+    smb_conf_file: "/etc/samba/smb.conf"
+    smb_path: "/mnt/"
+    tm_path: "/mnt/drive1/shared/timemachine/data/"
+    smb_block: |
+      [global]
+              map to guest = Bad User
+              log file = /var/log/samba/%m
+              log level = 1
+      [mnt]
+        comment = mnt
+        path = {{ smb_path }}
+        read only = no
+        guest ok = yes
+        guest only = yes
+      [guest]
+        comment = TM
+        path = {{ tm_path }}
+        read only = no
+        guest ok = yes
+        guest only = yes
+        vfs objects = catia fruit streams_xattr
+        fruit:time machine = yes
+  tasks:
+  - name: Install packages
+    apt:
+      name: "{{ packages }}"
+      state: latest
+  - name: Update "{{smb_conf_file}}"
+    blockinfile:
+      path: "{{ smb_conf_file }}"
+      block: "{{ smb_block }}"
+      backup: yes
+      validate: /usr/bin/testparm -s %s
+  - name: Reload Samba
+    service:
+      name: smbd
+      state: reloaded

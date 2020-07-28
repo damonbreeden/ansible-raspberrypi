@@ -1,0 +1,23 @@
+---
+- hosts: all
+  tasks:
+  - name: Update and upgrade apt packages
+    become: true
+    apt:
+      upgrade: 'yes'
+      update_cache: 'yes'
+      cache_valid_time: 86400 #One day
+  - name: check if reboot needed
+    stat: path=/var/run/reboot-required
+    register: file_reboot_required
+      # "meta: end_play" aborts the rest of the tasks in the current «tasks:»
+      # section, for the current server
+      # "when:" clause ensures that the "meta: end_play" only triggers if the
+      # current server does _not_ need a reboot
+  - meta: end_play
+    when: not file_reboot_required.stat.exists
+  - name: reboot node
+    shell: sleep 2 && shutdown -r now "Reboot triggered by ansible"
+    async: 1
+    poll: 0
+    ignore_errors: true

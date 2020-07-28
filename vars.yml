@@ -1,0 +1,7 @@
+---
+vars:
+  docker_home: "/mnt/drive2/docker"
+  docker_user: "ubuntu"
+  docker_group: "docker"
+
+  media_root: "/mnt/drive2/Media"

@@ -1,0 +1,75 @@
+---
+- hosts: all
+  become: 'yes'
+  # unfortunately this requires that you get the UUIDs of the disks before you can run this
+  # one day perhaps I'll find a way to mount every drive based on their attributes
+  # the last answer here has nothing to do with Ansible but does describe how to do it...
+  # https://stackoverflow.com/questions/41292850/how-to-mount-all-partitions-listed-on-the-fstab-with-ansible
+  # get the UUIDs with `sudo blkid`
+  # make the fs with sudo mkfs.ext4 -L 'drive5' /dev/sdd1
+  # get the UUID again, it changed
+  vars:
+    drives:
+      - name: "drive5"
+        mnt_point: "/mnt/drive5"
+        uuid: "UUID=54e24d13-30da-4596-bb40-953c958226e0"
+        opts: "defaults,nofail"
+        fstype: "ext4"
+    drive1_mnt_point: "/mnt/drive1"
+    drive1_uuid: "UUID=d165129d-52f2-4143-a78c-67e747cd4f54"
+    drive1_opts: "defaults"
+    drive1_fstype: "ext4"
+    drive3_mnt_point: "/mnt/drive3"
+    drive3_uuid: "UUID=4d3650f1-1f6b-40b6-aff3-9d07ac032549"
+    drive3_opts: "defaults"
+    drive3_fstype: "ext4"
+
+  tasks:
+  - name: Create "{{ item.mnt_point }}"
+    file:
+      path: "{{ item.mnt_point }}"
+      state: directory
+    loop: "{{ drives }}"
+  - name: Mount "{{ item.mnt_point }}"
+    mount:
+      path: "{{ item.mnt_point }}"
+      src: "{{ item.uuid }}"
+      fstype: "{{ item.fstype }}"
+      opts: "{{ item.opts }}"
+      state: present
+    loop: "{{ drives }}"
+  - name: Create "{{ drive1_mnt_point }}"
+    file:
+      path: "{{ drive1_mnt_point }}"
+      state: directory
+  - name: Mount "{{ drive1_mnt_point }}"
+    mount:
+      path: "{{ drive1_mnt_point }}"
+      src: "{{ drive1_uuid}}"
+      fstype: "{{ drive1_fstype }}"
+      opts: "{{ drive1_opts }}"
+      state: present
+  - name: Create "{{ drive3_mnt_point }}"
+    file:
+      path: "{{ drive3_mnt_point }}"
+      state: directory
+  - name: Mount "{{ drive3_mnt_point }}"
+    mount:
+      path: "{{ drive3_mnt_point }}"
+      src: "{{ drive3_uuid}}"
+      fstype: "{{ drive3_fstype }}"
+      opts: "{{ drive3_opts }}"
+      state: present
+  - name: Create /mnt/drive2
+    file:
+      path: /mnt/drive2
+      state: directory
+  - name: Mount drive2
+    mount:
+      path: /mnt/drive2
+      src: UUID=7D9F-19F4
+      fstype: vfat
+      opts: rw,relatime,fmask=0000,dmask=0000,codepage=437,iocharset=iso8859-1,shortname=mixed,errors=continue
+      state: present
+  - name: Run 'mount -a'
+    command: mount -a

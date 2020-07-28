@@ -1,0 +1,62 @@
+---
+- hosts: all
+  become: true
+  vars:
+    transmission_complete_dir: "/mnt/drive1/shared/downloads/complete/"
+    transmission_incomplete_dir: "/mnt/drive1/shared/downloads/incomplete/"
+    transmission_max_peers_global: "100"
+    transmission_speed_limit_up: "1000"
+    transmission_speed_limit_up_enabled: "true"
+    user_group: "ubuntu"
+    rpc_hostname: "raspberrypi"
+    blocklist_url: "http://list.iblocklist.com/?list=ydxerpxkpcfqjaybcssw&fileformat=p2p&archiveformat=gz"
+  tasks:
+  - name: Install Transmission
+    apt:
+      name: transmission-daemon
+      state: latest
+  - name: Stop Transmission
+  # settings get lost if Transmission running when settings.json updated
+    service:
+      name: transmission-daemon
+      state: stopped
+  - name: Create "{{ transmission_complete_dir }}"
+    file:
+      path: "{{ transmission_complete_dir }}"
+      state: directory
+  - name: Create "{{ transmission_incomplete_dir }}"
+    file:
+      path: "{{ transmission_incomplete_dir }}"
+      state: directory
+  - name: Add debian-transmission user to "{{ user_group }}" group
+    user:
+      name: debian-transmission
+      groups: "{{ user_group }}"
+      append: yes
+  - name: Add "{{ user_group }}" user to debian-transmission group
+    user:
+      name: "{{ user_group }}"
+      groups: debian-transmission
+      append: yes
+  - name: Update settings.json
+    # https://stackoverflow.com/questions/39974653/how-to-replace-block-text-with-help-blockinfile
+    lineinfile: dest=/etc/transmission-daemon/settings.json regexp="{{ item.regexp }}" line="{{ item.line }}"
+    with_items:
+      - { regexp: '^    "blocklist-enabled":',          line: '    "blocklist-enabled": true,'}
+      - { regexp: '^    "blocklist-url":',              line: '    "blocklist-url": "{{ blocklist_url }}",'}
+      - { regexp: '^    "download-dir":',               line: '    "download-dir": "{{ transmission_complete_dir }}",'}
+      - { regexp: '^    "incomplete-dir":',             line: '    "incomplete-dir": "{{ transmission_incomplete_dir }}",'}
+      - { regexp: '^    "incomplete-dir-enabled":',     line: '    "incomplete-dir-enabled": true,'}
+      - { regexp: '^    "max-peers-global":',           line: '    "max-peers-global": {{ transmission_max_peers_global }},'}
+      - { regexp: '^    "rpc-authentication-required"', line: '    "rpc-authentication-required": false,'}
+      - { regexp: '^    "rpc-host-whitelist":',         line: '    "rpc-host-whitelist": "{{ rpc_hostname }}",'}
+      - { regexp: '^    "rpc-whitelist":',              line: '    "rpc-whitelist": "127.0.0.*,192.168.*.*",'}
+      - { regexp: '^    "rpc-whitelist-enabled":',      line: '    "rpc-whitelist-enabled": true,'}
+      - { regexp: '^    "speed-limit-down":',           line: '    "speed-limit-down": 1500,'}
+      - { regexp: '^    "speed-limit-down-enabled":',   line: '    "speed-limit-down-enabled": true,'}
+      - { regexp: '^    "speed-limit-up":',             line: '    "speed-limit-up": {{ transmission_speed_limit_up }},'}
+      - { regexp: '^    "speed-limit-up-enabled":',     line: '    "speed-limit-up-enabled": {{transmission_speed_limit_up_enabled}},'}
+  - name: Reload Transmission
+    service:
+      name: transmission-daemon
+      state: reloaded

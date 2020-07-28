@@ -1,0 +1,29 @@
+---
+- hosts: all
+  become: true
+  vars:
+    ###
+    ### Glances
+    ###
+    glances_available_externally: "false"
+    glances_port_one: "61208"
+    glances_port_two: "61209"
+  tasks:
+  - name: Glances Docker Container
+    docker_container:
+      name: glances
+      image: nicolargo/glances
+      pull: true
+      ports:
+        - "{{ glances_port_one }}:61208"
+        - "{{ glances_port_two }}:61209"
+      volumes:
+        #- "/glances.conf:/glances/conf/glances.conf"
+        - "/var/run/docker.sock:/var/run/docker.sock:ro"
+        - "/etc/timezone:/etc/timezone:ro"
+      pid_mode: host
+      network_mode: host
+      env:
+        GLANCES_OPT: "-w"
+      restart_policy: unless-stopped
+      memory: 1g

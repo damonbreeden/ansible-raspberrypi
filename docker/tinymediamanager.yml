@@ -1,0 +1,50 @@
+---
+- hosts: all
+  become: true
+  vars:
+    ###
+    ### tmm
+    ###
+    # If you're paranoid, set permissions to "ro" so tmm won't ever be able to
+    # delete your files
+    docker_home: /mnt/drive2/docker
+    media_root: "/mnt/drive2/Media"
+    movies_root: "{{media_root}}/Movies"
+    tv_root: "{{media_root}}/TV"
+    tmm_config_directory: "{{ docker_home }}/tmm/config"
+    tmm_movies_directory: "{{ movies_root }}"
+    tmm_movies_permissions: "rw"
+    tmm_tv_directory: "{{ tv_root }}"
+    tmm_tv_permissions: "rw"
+    tmm_user_id: "0"
+    tmm_group_id: "0"
+    tmm_port_http: "5800"
+    tmm_port_vnc: "5901"
+
+  tasks:
+  - name: Create tmm Directories
+    file:
+      path: "{{ item }}"
+      state: directory
+    with_items:
+      - "{{ tmm_config_directory }}"
+
+  - name: tmm Docker Container
+    docker_container:
+      name: tmm
+      image: romancin/tinymediamanager
+      pull: true
+      volumes:
+        - "{{ tmm_config_directory }}:/config:rw"
+        - "{{ tmm_movies_directory }}:/movies:{{ tmm_movies_permissions }}"
+        - "{{ tmm_tv_directory }}:/tv:{{ tmm_tv_permissions }}"
+      ports:
+        - "{{ tmm_port_http }}:5800"
+        - "{{ tmm_port_vnc }}:5900"
+      # network_mode: "host"
+      env:
+        # TZ: "{{ ansible_nas_timezone }}"
+        PUID: "{{ tmm_user_id }}"
+        PGID: "{{ tmm_group_id }}"
+      restart_policy: unless-stopped
+      memory: 1g

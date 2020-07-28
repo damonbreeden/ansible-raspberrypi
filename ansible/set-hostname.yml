@@ -1,0 +1,6 @@
+---
+- hosts: all
+  become: true
+  tasks:
+  - hostname:
+      name: raspberrypi

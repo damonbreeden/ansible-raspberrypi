@@ -1,0 +1,14 @@
+- hosts: all
+  become: true
+  vars:
+    cfgfile: "/boot/firmware/usercfg.txt"
+  tasks:
+  - name: update "{{ cfgfile }}"
+    lineinfile: dest="{{ cfgfile }}" regexp="{{ item.regexp }}" line="{{ item.line }}"
+    with_items:
+      - { regexp: '^over_voltage=', line: 'over_voltage=4'}
+      - { regexp: '^arm_freq=',     line: 'arm_freq=1750'}
+      - { regexp: 'gpu_freq=',      line: 'gpu_freq=600'}
+  - name: reboot
+    reboot:
+      reboot_timeout: 3600
