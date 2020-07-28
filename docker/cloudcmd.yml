@@ -19,18 +19,3 @@
       state: directory
     with_items:
       - "{{ cloudcmd_data_directory }}"
-  # - name: CloudCmd
-  #   docker_container:
-  #     name: cloudcmd
-  #     image: coderaiser/cloudcmd
-  #     pull: true
-  #     volumes:
-  #       - "{{ cloudcmd_data_directory }}:/config:rw"
-  #       - "{{ cloudcmd_browse_directory }}:/mnt/fs"
-  #     ports:
-  #       - "{{ cloudcmd_port }}:8000"
-  #     env:
-  #       PUID: "{{ cloudcmd_user_id }}"
-  #       PGID: "{{ cloudcmd_group_id }}"
-  #     restart_policy: unless-stopped
-  #     memory: 1g
