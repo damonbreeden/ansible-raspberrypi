@@ -71,5 +71,3 @@
       fstype: vfat
       opts: rw,relatime,fmask=0000,dmask=0000,codepage=437,iocharset=iso8859-1,shortname=mixed,errors=continue
       state: absent
-  - name: Run 'mount -a'
-    command: mount -a
