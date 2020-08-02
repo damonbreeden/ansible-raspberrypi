@@ -36,7 +36,7 @@
       src: "{{ item.uuid }}"
       fstype: "{{ item.fstype }}"
       opts: "{{ item.opts }}"
-      state: present
+      state: mounted
     loop: "{{ drives }}"
   - name: Create "{{ drive1_mnt_point }}"
     file:
@@ -48,7 +48,7 @@
       src: "{{ drive1_uuid}}"
       fstype: "{{ drive1_fstype }}"
       opts: "{{ drive1_opts }}"
-      state: present
+      state: mounted
   - name: Create "{{ drive3_mnt_point }}"
     file:
       path: "{{ drive3_mnt_point }}"
@@ -59,17 +59,17 @@
       src: "{{ drive3_uuid}}"
       fstype: "{{ drive3_fstype }}"
       opts: "{{ drive3_opts }}"
-      state: present
+      state: mounted
   - name: Create /mnt/drive2
     file:
       path: /mnt/drive2
-      state: directory
+      state: absent
   - name: Mount drive2
     mount:
       path: /mnt/drive2
       src: UUID=7D9F-19F4
       fstype: vfat
       opts: rw,relatime,fmask=0000,dmask=0000,codepage=437,iocharset=iso8859-1,shortname=mixed,errors=continue
-      state: present
+      state: absent
   - name: Run 'mount -a'
     command: mount -a
