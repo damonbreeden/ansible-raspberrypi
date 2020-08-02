@@ -1,0 +1,32 @@
+---
+- hosts: all
+  become: true
+  vars:
+  tasks:
+  - name: Install required packages
+    apt:
+      name: apt-transport-https
+      state: latest
+  - name: Add jellyfin apt key
+    apt_key:
+      url: https://repo.jellyfin.org/jellyfin_team.gpg.key
+      state: present
+  - name: Add Jellyfin repo
+    apt_repository:
+      repo: deb [arch=arm64] https://repo.jellyfin.org/ubuntu focal main
+      state: present
+  - name: Update the package index
+    apt:
+      update_cache: yes
+  - name: Install Jellyfin
+    apt:
+      package: jellyfin
+      state: latest
+  - name: Enable jellyfin service
+    systemd:
+      name: jellyfin
+      enabled: yes
+  - name: (Re)Start jellyfin service
+    service:
+      name: jellyfin
+      state: restarted
