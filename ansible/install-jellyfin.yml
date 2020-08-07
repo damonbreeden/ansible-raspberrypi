@@ -14,19 +14,29 @@
   - name: Add Jellyfin repo
     apt_repository:
       repo: deb [arch=arm64] https://repo.jellyfin.org/ubuntu focal main
-      state: present
+      state: absent
   - name: Update the package index
     apt:
       update_cache: yes
   - name: Install Jellyfin
     apt:
       package: jellyfin
-      state: latest
+      state: absent
+  - name: Nice jellyfin
+    lineinfile:
+      path: /lib/systemd/system/jellyfin.service
+      insertafter: "Service"
+      line: "Nice = -10"
+      firstmatch: yes
+      state: present
+  - name: Run systemctl daemon-reload
+    systemd:
+      daemon_reload: yes
   - name: Enable jellyfin service
     systemd:
       name: jellyfin
-      enabled: yes
-  - name: (Re)Start jellyfin service
+      enabled: no
+  - name: Manage jellyfin service
     service:
       name: jellyfin
-      state: restarted
+      state: stopped
